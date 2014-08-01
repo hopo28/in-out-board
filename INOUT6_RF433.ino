@@ -119,7 +119,11 @@ void setup()
   Serial.begin(9600);
   Serial.print("I am ");
   Serial.println(role_friendly_name[myRole]);
-  rainbowCycle(5);  
+  showStatus();
+  if(myRole == ROLE_RPT)
+    flickerToLife();
+  else
+    rainbowCycle(5);  
 }
 
 void loop()
@@ -144,7 +148,19 @@ void checkRF()
     {
       digitalWrite(13,1);//data recieved  
       Serial.print("From: ");
-      Serial.println(role_friendly_name[buf[0] - '0']);
+      if(buf[0] - '0' == ROLE_SWPOD ||
+         buf[0] - '0' == ROLE_POD1 ||
+         buf[0] - '0' == ROLE_POD2 ||
+         buf[0] - '0' == ROLE_POD3 ||
+         buf[0] - '0' == ROLE_POD4 ||
+         buf[0] - '0' == ROLE_POD5)
+      {
+        Serial.println(role_friendly_name[buf[0] - '0']);
+      }
+      else
+      {
+        Serial.println("EasterEgg (probably)");
+      } 
       CRGB myColour = Wheel(random(0,256));
       int arraySize = 0;
       switch(buf[0] - '0')//from...
@@ -159,12 +175,12 @@ void checkRF()
   	case ROLE_POD5:
   	  arraySize = 4;
   	  break;
-	case 42: rainbowCycle(5); break;
-        case 43: colorWipe(myColour,50); colorWipe2(CRGB::Black,50); break;
-        case 44: rainbow(5); break;
-        case 45: colorWipe2(myColour,50); colorWipe(CRGB::Black,50); break;
-        case 46: allRainbow(5); break;
-        case 47: LEDS.setBrightness(0xFF); runSparkle(myColour, 20, 50); LEDS.setBrightness(LED_RPT_BRIGHTNESS); break;
+        case 49: rainbowCycle(5); break;
+        case 50: colorWipe(myColour,50); colorWipe2(CRGB::Black,50); break;
+        case 51: pulse(LED_RPT_BRIGHTNESS, 100, 3, 10); break;//pulse
+        case 52: colorWipe2(myColour,50); colorWipe(CRGB::Black,50); break;
+        case 53: allRainbow(5); break;
+        case 54: LEDS.setBrightness(0xFF); runSparkle(myColour, 20, 50); LEDS.setBrightness(LED_RPT_BRIGHTNESS); break;
   	default:
   	  //do nothing
   	  break;
@@ -252,7 +268,7 @@ void showStatus()
     }
   }
 
-  if(myRole == ROLE_RPT)
+  if(myRole == ROLE_RPT)//if RPT
   {
     for(int i = 0; i < NUM_TOTAL_PEOPLE; i++)//set up all LED's
     { 
@@ -267,7 +283,7 @@ void showStatus()
       }
     }
   } 
-  else
+  else//if RPT
   {  
     for(int i = 0; i < NUM_PEOPLE; i++)//set up all LED's
     { 
@@ -384,7 +400,7 @@ void easterEgg()
       {
         case 0: rainbowCycle(10); break;
         case 1: colorWipe(myColour,100); colorWipe2(CRGB::Black,100); break;
-        case 2: rainbow(10); break;
+        case 2: pulse(LED_RPT_BRIGHTNESS, 100, 3, 10); break;
         case 3: colorWipe2(myColour,100); colorWipe(CRGB::Black,100); break;
         case 4: allRainbow(10); break;
         //case 5: runSparkle(myColour, 20, 100); break;
@@ -394,6 +410,46 @@ void easterEgg()
 }
 
 //-------------------------Easter egg sequences------------------------------------------  
+
+void flickerToLife()
+{
+  byte lux;
+  byte max = 255;
+  if(myRole == ROLE_RPT)//if rpt
+    lux = LED_RPT_BRIGHTNESS;
+  else//if pod
+    lux = LED_BRIGHTNESS;
+
+  LEDS.setBrightness(000); FastLED.show(); delay(000); //off
+  LEDS.setBrightness(max); FastLED.show(); delay(010); 
+  LEDS.setBrightness(000); FastLED.show(); delay(050); //off
+  LEDS.setBrightness(max); FastLED.show(); delay(010); 
+  LEDS.setBrightness(000); FastLED.show(); delay(200); //off
+  LEDS.setBrightness(max); FastLED.show(); delay(010);
+  LEDS.setBrightness(000); FastLED.show(); delay(300); //off
+  LEDS.setBrightness(040); FastLED.show(); delay(040); 
+  LEDS.setBrightness(max); FastLED.show(); delay(010); 
+  LEDS.setBrightness(lux); FastLED.show(); delay(100); 
+}
+
+void pulse(int origBrightness, int targetBrightness, int times, int speed)
+{
+  for(int i = 0; i < times; i++)
+  {
+    for(int i = origBrightness; i < targetBrightness; i++)//up...
+    {
+      LEDS.setBrightness(i);
+      FastLED.show();
+      delay(speed);
+    }
+    for(int i = targetBrightness; i > origBrightness; i--)//and down...
+    {
+      LEDS.setBrightness(i);
+      FastLED.show();
+      delay(speed);
+    }
+  }
+}
   
 void runSparkle(CRGB myColour, int wait, int times) 
 {
@@ -556,3 +612,4 @@ byte Wheel_B(byte WheelPos) {
 		return (255 - WheelPos * 3);//no red component
 	}
 }
+
